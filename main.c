@@ -181,7 +181,7 @@ void init()
 		GPIOPadConfigSet(GPIO_PORTC_BASE, GPIO_PIN_4 | GPIO_PIN_5 , GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD_WPU);
 		
 		//Configure pins of PORTE
-		GPIOPinTypeGPIOOutput(GPIO_PORTE_BASE, GPIO_PIN_1 | GPIO_PIN_2); 		// PORTE output pins for the motor
+		GPIOPinTypeGPIOOutput(GPIO_PORTE_BASE, GPIO_PIN_1 | GPIO_PIN_2); // PORTE output pins for the motor
 		GPIOUnlockPin(GPIO_PORTE_BASE, GPIO_PIN_1 | GPIO_PIN_2);
 			
 }
@@ -190,17 +190,15 @@ void init()
 //PORT A ISR
 void GPIOA_Handler() 
 {
-	//Checks which button has been pressed
-	//Highest priority flag is initialized to false , the flag is used for context switching if a higher or equal priority task is preempted from the ISR
 	BaseType_t xHigherPriorityTaskWoken= pdFALSE;    
-	/**Manual Driver Up**/
+	/*Manual Driver Up*/
 	if (GPIOPinRead(GPIO_PORTA_BASE,GPIO_PIN_2) != GPIO_PIN_2)     
 	{
 		GPIOIntClear(GPIO_PORTA_BASE,GPIO_PIN_2); // Clear Interrupt
 		xSemaphoreGiveFromISR(S_manualDriverUp,&xHigherPriorityTaskWoken);
 		portEND_SWITCHING_ISR(xHigherPriorityTaskWoken); //context switching if flag == 1
 	}
-	/**Manual Driver Down**/
+	/*Manual Driver Down*/
 	else if (GPIOPinRead(GPIO_PORTA_BASE,GPIO_PIN_3) != GPIO_PIN_3) 
 	{
 		GPIOIntClear(GPIO_PORTA_BASE,GPIO_PIN_3); // Clear Interrupt
@@ -208,7 +206,7 @@ void GPIOA_Handler()
 		portEND_SWITCHING_ISR(xHigherPriorityTaskWoken); //context switching if flag == 1
 	}
 	
-	/**Manual Passenger Up**/
+	/*Manual Passenger Up*/
 	else if (GPIOPinRead(GPIO_PORTA_BASE,GPIO_PIN_6) != GPIO_PIN_6)
 	{
 		GPIOIntClear(GPIO_PORTA_BASE,GPIO_PIN_6);
@@ -216,7 +214,7 @@ void GPIOA_Handler()
 		portEND_SWITCHING_ISR(xHigherPriorityTaskWoken);
 	}
 
-	/**Manual Passenger Down**/
+	/*Manual Passenger Down*/
 	else if (GPIOPinRead(GPIO_PORTA_BASE,GPIO_PIN_7) != GPIO_PIN_7) 
 	{
 		GPIOIntClear(GPIO_PORTA_BASE,GPIO_PIN_7);
@@ -224,8 +222,7 @@ void GPIOA_Handler()
 		portEND_SWITCHING_ISR(xHigherPriorityTaskWoken);
 	}
 	
-	/** Lock **/
-	 // check if the lock switch is pressed
+	/* Lock */
 	else if ((GPIOPinRead(GPIO_PORTA_BASE, GPIO_PIN_5))!= GPIO_PIN_5)
 	{
 		delayMs(10); //Debouncing
@@ -236,8 +233,7 @@ void GPIOA_Handler()
 		}
 	}
 
-	/**Jamming**/
-	
+	/*Jamming*/
 	else if (GPIOPinRead(GPIO_PORTA_BASE,GPIO_PIN_4) != GPIO_PIN_4)
 	{
  		GPIOIntClear(GPIO_PORTA_BASE,GPIO_PIN_4);
@@ -258,10 +254,8 @@ void GPIOA_Handler()
 //ISR of PORT B
 void GPIOB_Handler()
 {
-	 //Checks which button has been pressed
-	//Highest priority flag is initialized to false , the flag is used for context switching if a higher or equal priority task is preempted from the ISR
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-	/**Automatic Driver Up**/
+	/*Automatic Driver Up*/
 	if (GPIOPinRead(GPIO_PORTB_BASE,GPIO_PIN_2) != GPIO_PIN_2)     
 	{
 		GPIOIntClear(GPIO_PORTB_BASE,GPIO_PIN_2); // Clear Interrupt
@@ -269,7 +263,7 @@ void GPIOB_Handler()
 		portEND_SWITCHING_ISR(xHigherPriorityTaskWoken); //context switching if flag == 1	
 	}
 
-	/**Automatic Driver Down**/
+	/*Automatic Driver Down*/
 	else if (GPIOPinRead(GPIO_PORTB_BASE,GPIO_PIN_3) != GPIO_PIN_3) 
 	{
 		GPIOIntClear(GPIO_PORTB_BASE,GPIO_PIN_3); // Clear Interrupt
@@ -277,7 +271,7 @@ void GPIOB_Handler()
 		portEND_SWITCHING_ISR(xHigherPriorityTaskWoken); //context switching if flag == 1
 	}
 	
-	/**Automatic Passenger Up**/
+	/*Automatic Passenger Up*/
 	else if (GPIOPinRead(GPIO_PORTB_BASE,GPIO_PIN_6) != GPIO_PIN_6)
 	{
 		GPIOIntClear(GPIO_PORTB_BASE,GPIO_PIN_6);
@@ -285,7 +279,7 @@ void GPIOB_Handler()
 		portEND_SWITCHING_ISR(xHigherPriorityTaskWoken);
 	}
 
-	/**Automatic Passenger Down**/
+	/*Automatic Passenger Down*/
 	else if (GPIOPinRead(GPIO_PORTB_BASE,GPIO_PIN_7) != GPIO_PIN_7) 
 	{
 		GPIOIntClear(GPIO_PORTB_BASE,GPIO_PIN_7);
@@ -305,18 +299,18 @@ void GPIOB_Handler()
 
 void manualDriverUp(void *params)
 {
-	// An initial check to ensure that the semaphore is empty (for safety)
 	xSemaphoreTake(S_manualDriverUp,0);
 	for(;;)
 	{
 		xSemaphoreTake (S_manualDriverUp, portMAX_DELAY);
 		xSemaphoreTake(MotorMutex, portMAX_DELAY);
-		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,GPIO_PIN_1); //Turn the motor on
+		//Turn the motor on
+		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,GPIO_PIN_1); 
 		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_2,0x00);
-		//As long as the corresponding button is pressed, and the corresponding limit switch is not reached, the code will be stuck in here , and the motor will stay on
+	
 		while(GPIOPinRead(GPIO_PORTA_BASE,GPIO_PIN_2) != GPIO_PIN_2 && GPIOPinRead(GPIO_PORTC_BASE,GPIO_PIN_5) ==  GPIO_PIN_5);
-
-		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,0x00);  //Turn the motor off
+		//Turn the motor off
+		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,0x00);  
 		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_2,0x00);
 		xSemaphoreGive(MotorMutex);
 	} 
@@ -324,18 +318,17 @@ void manualDriverUp(void *params)
 
 void manualDriverDown(void *params)
 {
-	// An initial check to ensure that the semaphore is empty (for safety)
 	xSemaphoreTake(S_manualDriverDown,0);
 	for(;;)
 	{
 		xSemaphoreTake (S_manualDriverDown, portMAX_DELAY);
 		xSemaphoreTake(MotorMutex, portMAX_DELAY);
-		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,0x00); //Turn the motor on
+		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,0x00);
 		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_2,GPIO_PIN_2);
-		//As long as the corresponding button is pressed, and the corresponding limit switch is not reached, the code will be stuck in here , and the motor will stay on
+		
 		while(GPIOPinRead(GPIO_PORTA_BASE,GPIO_PIN_3) != GPIO_PIN_3 && GPIOPinRead(GPIO_PORTC_BASE,GPIO_PIN_4) ==  GPIO_PIN_4); 
 
-		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,0); //Turn the motor off
+		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,0);
 		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_2,0);
 		xSemaphoreGive(MotorMutex);
 	}
@@ -343,36 +336,34 @@ void manualDriverDown(void *params)
 
 void manualPassengerUp (void *params)
 {
-	// An initial check to ensure that the semaphore is empty (for safety)
 	xSemaphoreTake(S_manualPassengerUp,0);
 	for(;;)
 	{
 		xSemaphoreTake (S_manualPassengerUp, portMAX_DELAY); 
-		//xSemaphoreTake(MotorMutex, portMAX_DELAY); //Mutex is not given to the passenger's manual task so that the priority resides with the driver
-		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,GPIO_PIN_1); //Turn the motor on
+		
+		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,GPIO_PIN_1); 
 		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_2,0x00);
-		//As long as the corresponding button is pressed, and the corresponding limit switch is not reached, the code will be stuck in here , and the motor will stay on
+		
 		while(GPIOPinRead(GPIO_PORTA_BASE,GPIO_PIN_6) != GPIO_PIN_6 && GPIOPinRead(GPIO_PORTC_BASE,GPIO_PIN_5) ==  GPIO_PIN_5); 
-
-		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,0x00); //Turn the motor off
+		 
+		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,0x00);
 		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_2,0x00);
 	}
 }
 
 void manualPassengerDown (void *params)
 {
-	// An initial check to ensure that the semaphore is empty (for safety)
 	xSemaphoreTake(S_manualPassengerDown,0);
 	for(;;)
 	{
 		xSemaphoreTake (S_manualPassengerDown, portMAX_DELAY);
-		//xSemaphoreTake(MotorMutex, portMAX_DELAY);//Mutex is not given to the passenger's manual task so that the priority resides with the driver
-		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,0x00); //Turn the motor on
+		
+		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,0x00);
 		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_2,GPIO_PIN_2);
-		//As long as the corresponding button is pressed, and the corresponding limit switch is not reached, the code will be stuck in here , and the motor will stay on
+		
 		while(GPIOPinRead(GPIO_PORTA_BASE,GPIO_PIN_7) != GPIO_PIN_7 && GPIOPinRead(GPIO_PORTC_BASE,GPIO_PIN_4) ==  GPIO_PIN_4);
 
-		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1, 0x00);// Turn the motor off
+		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1, 0x00);
 		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_2, 0x00);		
 	}
 }
@@ -384,30 +375,33 @@ void autoDriverUp (void *params)
 	{
 		xSemaphoreTake (S_autoDriverUp, portMAX_DELAY);
 		xSemaphoreTake(MotorMutex, portMAX_DELAY);
-		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,GPIO_PIN_1); //Turn the motor on
+		
+		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,GPIO_PIN_1);
 		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_2,0x00);	
-		while(GPIOPinRead(GPIO_PORTC_BASE,GPIO_PIN_5) ==  GPIO_PIN_5) //Keep the motor on as long as the corresponding limit switch is not reached
+
+		while(GPIOPinRead(GPIO_PORTC_BASE,GPIO_PIN_5) ==  GPIO_PIN_5) 
 		{
 			int auto_pressed = 0;
-			if(xQueueReceive(xAutoUpQueue, &auto_pressed,0) == pdTRUE)	//check if jamming occured
+			
+			if(xQueueReceive(xAutoUpQueue, &auto_pressed,0) == pdTRUE)	
 			{
-				//check if the window is currently in automatic up mode
+				
 				if(auto_pressed == 1){
-				// Stop the motor			
-				GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,0x00);
-				GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_2,0x00);
-				delayMs(300);
-				// Bring the window down for a little bit	
-				GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,0x00); 
-				GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_2,GPIO_PIN_2);
-				delayMs(500);
-				GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,0x00);
-				GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_2,0x00);
-				break;	// Break from the nested if condition to check if the jamming condition is cleared
+								
+					GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,0x00);
+					GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_2,0x00);
+					delayMs(300);
+						
+					GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,0x00); 
+					GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_2,GPIO_PIN_2);
+					delayMs(500);
+					GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,0x00);
+					GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_2,0x00);
+					break;
 				}
 			 }
 		}
-		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,0x00); //Turn the motor off
+		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,0x00);
 		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_2,0x00);
 		xSemaphoreGive(MotorMutex);	
 	}
@@ -420,14 +414,15 @@ void autoDriverDown (void *params)
 	{
 		xSemaphoreTake (S_autoDriverDown, portMAX_DELAY);
 		xSemaphoreTake(MotorMutex, portMAX_DELAY);
-		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,0x00); //Turn the motor on
+		
+		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,0x00); 
 		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_2,GPIO_PIN_2);reached
-		//Keep the motor on as long as the corresponding limit switch is not 
+		 
 		while(GPIOPinRead(GPIO_PORTC_BASE,GPIO_PIN_4) ==  GPIO_PIN_4);
 			
-		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,0x00); //Turn the motor off
-	    GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_2,0x00);
-   	    xSemaphoreGive(MotorMutex);
+		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,0x00);
+	   	GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_2,0x00);
+   	    	xSemaphoreGive(MotorMutex);
 	}
 }
 void autoPassengerUp (void *params)
@@ -437,20 +432,20 @@ void autoPassengerUp (void *params)
 	{
 		xSemaphoreTake (S_autoPassengerUp, portMAX_DELAY);
 
-		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,GPIO_PIN_1); //Turn on the motor
+		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,GPIO_PIN_1);
 		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_2,0x00);
-		while(GPIOPinRead(GPIO_PORTC_BASE,GPIO_PIN_5) ==  GPIO_PIN_5) //Keep the motor on as long as the corresponding limit switch is not reached
+		while(GPIOPinRead(GPIO_PORTC_BASE,GPIO_PIN_5) ==  GPIO_PIN_5) 
 		{
 			int auto_pressed = 0;
-			if(xQueueReceive(xAutoUpQueue, &auto_pressed,0) == pdTRUE)//Check if jamming occured
+			if(xQueueReceive(xAutoUpQueue, &auto_pressed,0) == pdTRUE)
 			{
-				//check if the window is currently in automatic up mode
+				
 				if(auto_pressed == 1){
-					// Stop the motor			
+								
 					GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,0x00);
 					GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_2,0x00);
 					delayMs(300);
-					// Bring the window down for a little bit	
+					
 					GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,0x00); 
 					GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_2,GPIO_PIN_2);
 					delayMs(500);
@@ -460,8 +455,8 @@ void autoPassengerUp (void *params)
 				}
 			}
 		}
-		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,0x00); // Turn off the motor
-	    GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_2,0x00);
+		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,0x00);
+	    	GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_2,0x00);
 	}
 }
 void autoPassengerDown (void *params)
@@ -471,13 +466,13 @@ void autoPassengerDown (void *params)
 	{
 		xSemaphoreTake (S_autoPassengerDown, portMAX_DELAY);
 
-		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,0x00); //Turn on the motor
+		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,0x00);
 		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_2,GPIO_PIN_2);
-		//Keep the motor on as long as the corresponding limit switch is not reached
+		
 		while(GPIOPinRead(GPIO_PORTC_BASE,GPIO_PIN_4) ==  GPIO_PIN_4);
 
-		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,0x00); //Turn off the motor
-	    GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_2,0x00);
+		GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_1,0x00);
+	   	GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_2,0x00);
 	}
 }
 void lock(void *params)
@@ -486,16 +481,16 @@ void lock(void *params)
 	for(;;)
 	{
 		xSemaphoreTake(S_lock, portMAX_DELAY);	
-		while(!(GPIOPinRead(GPIO_PORTA_BASE, GPIO_PIN_5))) //Check if lock switch is pressed
+		while(!(GPIOPinRead(GPIO_PORTA_BASE, GPIO_PIN_5)))
 		{
-			//Disable manual control by the passenger
+			
 			GPIOIntDisable(GPIO_PORTA_BASE, GPIO_INT_PIN_6 | GPIO_INT_PIN_7 ); 
-			//Disable automatic control by the passenger
+			
 			GPIOIntDisable(GPIO_PORTB_BASE, GPIO_INT_PIN_6 | GPIO_INT_PIN_7 ); 
 		}
-		//Enable manual control by the passenger
+		
 		GPIOIntEnable(GPIO_PORTA_BASE, GPIO_INT_PIN_6 | GPIO_INT_PIN_7 );
-		//Enable automatic control by the passenger
+		
 		GPIOIntEnable(GPIO_PORTB_BASE, GPIO_INT_PIN_6 | GPIO_INT_PIN_7 ); 
 	}
 }
@@ -507,9 +502,9 @@ void jamming (void* params)
 	for(;;)
 	{
 		xSemaphoreTake (S_jamming, portMAX_DELAY);
-		const TickType_t xDelay = 10 / portTICK_RATE_MS; //standard delay to be used with queues
+		const TickType_t xDelay = 10 / portTICK_RATE_MS; 
 		int flag = 1;
-		xQueueSend(xAutoUpQueue,&flag,xDelay);	//Queue that let's other tasks know that jamming was detected
+		xQueueSend(xAutoUpQueue,&flag,xDelay);
 	}
 }
 	
