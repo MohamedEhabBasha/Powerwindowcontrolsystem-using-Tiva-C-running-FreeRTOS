@@ -3,7 +3,7 @@
 ## Project Description
 The project target is to program a control system for a power window using a TivaC123GH6PM running FreeRTOS.
 
-### Project scope
+## Project scope
 1. Implementation of front passenger door window with both passenger and driver control
 panels.
 2. FreeRTOS implementation is a must.
@@ -11,7 +11,7 @@ panels.
 the window.
 4. Obstacle detection implementation is required, with a push button used to indicate jamming instead of a sensor.
 
-### System basic features
+## System basic features
 1. Manual open/close function
   
      When the power window switch is pushed or pulled
